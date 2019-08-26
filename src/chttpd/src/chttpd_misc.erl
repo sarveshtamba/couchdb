@@ -23,6 +23,7 @@
     handle_system_req/1,
     handle_task_status_req/1,
     handle_up_req/1,
+    handle_ready_req/1,
     handle_utils_dir_req/1,
     handle_utils_dir_req/2,
     handle_uuids_req/1,
@@ -509,6 +510,19 @@ handle_up_req(#httpd{method='GET'} = Req) ->
 
 handle_up_req(Req) ->
     send_method_not_allowed(Req, "GET,HEAD").
+
+
+handle_ready_req(#httpd{method='GET'} = Req) ->
+    try
+        fabric2_db:list_dbs([{limit, 0}]),
+        send_json(Req, 200, {[{status, ready}]})
+    catch error:{timeout, _} ->
+        send_json(Req, 404, {[{status, unavailable}]})
+    end;
+
+handle_ready_req(Req) ->
+    send_method_not_allowed(Req, "GET,HEAD").
+
 
 message_queues(Registered) ->
     lists:map(fun(Name) ->
